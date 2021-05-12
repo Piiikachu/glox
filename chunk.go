@@ -13,20 +13,12 @@ type Chunk struct {
 	code     []OpCode
 }
 
-func (c *Chunk) initChunk() {
-	c.count = 0
-	c.capacity = 0
-	c.code = nil
+func (c *Chunk) write(byteCode OpCode) {
+	c.code = append(c.code, byteCode)
+	c.capacity = cap(c.code)
+	c.count = len(c.code)
 }
 
-func (c *Chunk) writeChunk(byteCode OpCode) {
-	//capacity not enough
-	if c.capacity < c.count+1 {
-		oldCapacity := c.capacity
-		c.capacity = GROW_CAPACITY(oldCapacity)
-		c.code = make([]OpCode, c.capacity)
-	}
-
-	c.code[c.count] = byteCode
-	c.count++
+func (c *Chunk) free() {
+	c = new(Chunk)
 }
