@@ -11,6 +11,12 @@ func (c *Chunk) disassemble(name string) {
 
 func (c *Chunk) disassembleInstruction(offset int) int {
 	fmt.Printf("%04d ", offset)
+	if offset > 0 && c.lines[offset] == c.lines[offset-1] {
+		fmt.Print("   | ")
+	} else {
+		fmt.Printf("%4d ", c.lines[offset])
+	}
+
 	instruction := c.code[offset]
 	switch OpCode(instruction) {
 	case OP_CONSTANT:
