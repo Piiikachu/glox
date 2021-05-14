@@ -2,14 +2,14 @@ package main
 
 import "fmt"
 
-func (c *Chunk) disassemble(name string) {
+func disassemble(c *Chunk, name string) {
 	fmt.Printf("== %s ==\n", name)
 	for offset := 0; offset < c.count; {
-		offset = c.disassembleInstruction(offset)
+		offset = disassembleInstruction(c, offset)
 	}
 }
 
-func (c *Chunk) disassembleInstruction(offset int) int {
+func disassembleInstruction(c *Chunk, offset int) int {
 	fmt.Printf("%04d ", offset)
 	if offset > 0 && c.lines[offset] == c.lines[offset-1] {
 		fmt.Print("   | ")
@@ -21,6 +21,8 @@ func (c *Chunk) disassembleInstruction(offset int) int {
 	switch OpCode(instruction) {
 	case OP_CONSTANT:
 		return constantInstruction("OP_CONSTANT", c, offset)
+	case OP_NEGATE:
+		return simpleInstruction("OP_NEGATE", offset)
 	case OP_RETURN:
 		return simpleInstruction("OP_RETURN", offset)
 	default:

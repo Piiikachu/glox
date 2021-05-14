@@ -4,15 +4,17 @@ type OpCode byte
 
 const (
 	OP_CONSTANT OpCode = iota
+	OP_NEGATE
 	OP_RETURN
 )
 
 type Chunk struct {
-	count     int
-	capacity  int
-	code      []byte
-	lines     []int
-	constants ValueArray
+	count       int
+	capacity    int
+	code        []byte
+	lines       []int
+	currentCode int
+	constants   ValueArray
 }
 
 func (c *Chunk) write(b byte, line int) {
@@ -29,4 +31,8 @@ func (c *Chunk) free() {
 func (c *Chunk) addConstant(value Value) int {
 	c.constants.write(value)
 	return c.constants.count - 1
+}
+
+func (c *Chunk) getCode() byte {
+	return c.code[c.currentCode]
 }
