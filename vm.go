@@ -54,15 +54,10 @@ func run() InterpretResult {
 	for {
 		if DEBUG_TRACE_EXECUTION {
 			fmt.Printf("          ")
-			for _, v := range vm.stack[:vm.stackTop] {
-				fmt.Printf("[ ")
-				printValue(v)
-				fmt.Printf(" ]")
-			}
-			fmt.Println()
+			fmt.Println(vm.stack[:vm.stackTop])
 
 			chunk := vm.getChunk()
-			disassembleInstruction(chunk, int(vm.getIP()-chunk.getCode()))
+			disassembleInstruction(chunk, vm.currentIP-chunk.currentCode)
 		}
 
 		instruction := OpCode(vm.READ_BYTE())
