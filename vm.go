@@ -67,10 +67,16 @@ func run() InterpretResult {
 				constant := vm.READ_CONSTANT()
 				vm.push(constant)
 			}
+		case OP_ADD:
+			BINARY_OP('+')
+		case OP_SUBSTRACT:
+			BINARY_OP('-')
+		case OP_MULTIPLY:
+			BINARY_OP('*')
+		case OP_DIVIDE:
+			BINARY_OP('/')
 		case OP_NEGATE:
-			{
-				vm.push(-vm.pop())
-			}
+			vm.push(-vm.pop())
 		case OP_RETURN:
 			{
 				printValue(vm.pop())
@@ -97,4 +103,19 @@ func (vm *VM) getChunk() *Chunk {
 
 func (vm *VM) getIP() byte {
 	return vm.ips[vm.currentIP]
+}
+
+func BINARY_OP(op rune) {
+	b := vm.pop()
+	a := vm.pop()
+	switch op {
+	case '+':
+		vm.push(a + b)
+	case '-':
+		vm.push(a - b)
+	case '*':
+		vm.push(a * b)
+	case '/':
+		vm.push(a / b)
+	}
 }
