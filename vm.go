@@ -1,6 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"bufio"
+	"fmt"
+	"io/ioutil"
+	"os"
+)
 
 const STACK_MAX = 256
 
@@ -21,6 +26,36 @@ const (
 	INTERPRET_COMPILE_ERROR
 	INTERPRET_RUNTIME_ERROR
 )
+
+func repl() {
+	for {
+		fmt.Print("> ")
+		reader := bufio.NewReader(os.Stdin)
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			os.Stderr.WriteString("Read error")
+			return
+		}
+		interpret(line)
+	}
+}
+
+func runFile(path string) {
+	buffer, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	println(string(buffer))
+	result := interpret(string(buffer))
+
+	if result == INTERPRET_COMPILE_ERROR {
+		os.Exit(65)
+	}
+	if result == INTERPRET_RUNTIME_ERROR {
+		os.Exit(70)
+	}
+}
 
 func (vm *VM) init() {
 	resetStack()
@@ -44,11 +79,11 @@ func (vm *VM) pop() Value {
 	return value
 }
 
-func interpret(c *Chunk) InterpretResult {
-	vm.chunk = *c
-	vm.ips = (*c).code
-	return run()
+func interpret(source string) InterpretResult {
+	compile(source)
+	return INTERPRET_OK
 }
+
 
 func run() InterpretResult {
 	for {
