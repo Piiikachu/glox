@@ -13,7 +13,7 @@ func compile(source string) {
 		} else {
 			fmt.Printf("   | ")
 		}
-		fmt.Printf("%-20s '%.*s'\n", token.tokenType.String(), len(token.lexeme), token.lexeme)
+		fmt.Printf("%-20s '%.*s' \n", token.tokenType.String(), len(token.lexeme), token.lexeme)
 
 		if token.tokenType == TOKEN_EOF {
 			break

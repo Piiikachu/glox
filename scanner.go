@@ -1,5 +1,7 @@
 package main
 
+import "strconv"
+
 type Scanner struct {
 	source  string
 	start   int
@@ -69,10 +71,75 @@ func (s *Scanner) scanToken() Token {
 		}
 	case '/':
 		return s.makeTokenByType(TOKEN_SLASH)
+	case '"':
+		return s.stringToken()
 	default:
-		return s.errorToken("Unexpected character.")
+		if isDigit(char) {
+			return s.numerToken()
+		} else if isAlpha(char) {
+			return s.identifier()
+		} else {
+			return s.errorToken("Unexpected character.")
+		}
 	}
 }
+
+func (s *Scanner) numerToken() Token {
+	for isDigit(s.peek()) {
+		s.advance()
+	}
+
+	if s.peek() == '.' && isDigit(s.peekNext()) {
+		s.advance()
+		for isDigit(s.peek()) {
+			s.advance()
+		}
+	}
+	num, err := strconv.ParseFloat(s.source[s.start:s.current], 64)
+	if err != nil {
+		return s.errorToken(err.Error())
+	}
+	return s.makeTokenByLiteral(TOKEN_NUMBER, num)
+}
+
+func (s *Scanner) identifier() Token {
+	for isAlphaNumeric(s.peek()){
+		s.advance()
+	}
+	return s.makeTokenByType(TOKEN_IDENTIFIER)
+}
+
+func isAlphaNumeric(char byte) bool {
+	return isAlpha(char) || isDigit(char)
+}
+
+func isAlpha(char byte) bool {
+	return (char >= 'a' && char <= 'z') ||
+		(char >= 'A' && char <= 'Z') ||
+		char == '_'
+}
+
+func isDigit(char byte) bool {
+	return char >= '0' && char <= '9'
+}
+
+func (s *Scanner) stringToken() Token {
+	for s.peek() != '"' && !s.isAtEnd() {
+		if s.peek() == '\n' {
+			s.line++
+		}
+		s.advance()
+	}
+
+	if s.isAtEnd() {
+		return s.errorToken("Unterminated string.")
+	}
+
+	s.advance()
+	value := s.source[s.start+1 : s.current-1]
+	return s.makeTokenByLiteral(TOKEN_STRING, value)
+}
+
 func (s *Scanner) skipWhiteSpace() {
 	for {
 		c := s.peek()
