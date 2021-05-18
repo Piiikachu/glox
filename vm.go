@@ -46,7 +46,6 @@ func runFile(path string) {
 		fmt.Println(err)
 		return
 	}
-	println(string(buffer))
 	result := interpret(string(buffer))
 
 	if result == INTERPRET_COMPILE_ERROR {

@@ -60,6 +60,24 @@ type Token struct {
 	line      int
 }
 
+var Keywords = map[string]TokenType{
+	"and":    TOKEN_AND,
+	"class":  TOKEN_CLASS,
+	"else":   TOKEN_ELSE,
+	"false":  TOKEN_FALSE,
+	"for":    TOKEN_FOR,
+	"fun":    TOKEN_FUN,
+	"if":     TOKEN_IF,
+	"nil":    TOKEN_NIL,
+	"or":     TOKEN_OR,
+	"print":  TOKEN_PRINT,
+	"return": TOKEN_RETURN,
+	"super":  TOKEN_SUPER,
+	"this":   TOKEN_THIS,
+	"true":   TOKEN_TRUE,
+	"var":    TOKEN_VAR,
+	"while":  TOKEN_WHILE,
+}
 
 func (t TokenType) String() string {
 	switch t {
@@ -149,5 +167,5 @@ func (t TokenType) String() string {
 }
 
 func (t *Token) String() string {
-	return string(t.tokenType)  + " " + t.lexeme 
+	return string(t.tokenType) + " " + t.lexeme
 }

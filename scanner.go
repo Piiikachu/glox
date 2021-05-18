@@ -103,10 +103,16 @@ func (s *Scanner) numerToken() Token {
 }
 
 func (s *Scanner) identifier() Token {
-	for isAlphaNumeric(s.peek()){
+	for isAlphaNumeric(s.peek()) {
 		s.advance()
 	}
-	return s.makeTokenByType(TOKEN_IDENTIFIER)
+
+	text := s.source[s.start:s.current]
+	tokenType, ok := Keywords[text]
+	if !ok {
+		tokenType = TOKEN_IDENTIFIER
+	}
+	return s.makeTokenByType(tokenType)
 }
 
 func isAlphaNumeric(char byte) bool {
