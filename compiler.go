@@ -100,8 +100,6 @@ func grouping() {
 func unary() {
 	operator := parser.previous.tokenType
 
-	parser.expression()
-
 	parsePrecedence(PREC_UNARY)
 
 	switch operator {
