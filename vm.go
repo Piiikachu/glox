@@ -12,7 +12,7 @@ const STACK_MAX = 256
 var vm = new(VM)
 
 type VM struct {
-	chunk     Chunk
+	chunk     *Chunk
 	ips       []byte
 	stack     [STACK_MAX]Value
 	stackTop  int
@@ -79,10 +79,15 @@ func (vm *VM) pop() Value {
 }
 
 func interpret(source string) InterpretResult {
-	compile(source)
-	return INTERPRET_OK
+	chunk := new(Chunk)
+	if !compile(source, chunk) {
+		return INTERPRET_COMPILE_ERROR
+	}
+	vm.chunk = chunk
+	vm.ips = vm.chunk.code
+	result := run()
+	return result
 }
-
 
 func run() InterpretResult {
 	for {
@@ -132,7 +137,7 @@ func (vm *VM) READ_CONSTANT() Value {
 }
 
 func (vm *VM) getChunk() *Chunk {
-	return &vm.chunk
+	return vm.chunk
 }
 
 func (vm *VM) getIP() byte {

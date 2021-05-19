@@ -9,6 +9,8 @@ type Scanner struct {
 	line    int
 }
 
+var scanner = new(Scanner)
+
 func (s *Scanner) init(source string) {
 	s.source = source
 	s.start = 0
