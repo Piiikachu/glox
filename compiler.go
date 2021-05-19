@@ -57,13 +57,13 @@ func compile(source string, chunk *Chunk) bool {
 }
 
 func (p *Parser) advance() {
-	parser.previous = parser.current
+	p.previous = p.current
 	for {
-		parser.current = scanner.scanToken()
-		if parser.current.tokenType != TOKEN_ERROR {
+		p.current = scanner.scanToken()
+		if p.current.tokenType != TOKEN_ERROR {
 			break
 		}
-		errorAtCurrent(parser.current.lexeme)
+		errorAtCurrent(p.current.lexeme)
 	}
 }
 
@@ -121,11 +121,11 @@ func binary() {
 	case TOKEN_PLUS:
 		emitByte(byte(OP_ADD))
 	case TOKEN_MINUS:
-		emitByte(byte(OP_ADD))
+		emitByte(byte(OP_SUBSTRACT))
 	case TOKEN_STAR:
-		emitByte(byte(OP_ADD))
+		emitByte(byte(OP_MULTIPLY))
 	case TOKEN_SLASH:
-		emitByte(byte(OP_ADD))
+		emitByte(byte(OP_DIVIDE))
 	default:
 		return
 	}
@@ -140,11 +140,11 @@ func (p *Parser) consume(t TokenType, msg string) {
 	errorAtCurrent(msg)
 }
 
-func (p *Parser)endCompiler() {
+func (p *Parser) endCompiler() {
 	emitReturn()
 	if DEBUG_PRINT_CODE {
-		if !parser.hadError{
-			disassemble(currentChunk(),"code")
+		if !parser.hadError {
+			disassemble(currentChunk(), "code")
 		}
 	}
 }
@@ -154,7 +154,7 @@ func emitConstant(value Value) {
 }
 
 func emitReturn() {
-	emitByte(byte(TOKEN_RETURN))
+	emitByte(byte(OP_RETURN))
 }
 
 func emitByte(b byte) {
