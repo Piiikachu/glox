@@ -35,12 +35,12 @@ func VAL(value interface{}) *Value {
 		}
 	case nil:
 		return &Value{
-			valueType: VAL_NUMBER,
+			valueType: VAL_NIL,
 			val:       v,
 		}
 	default:
 		return &Value{
-			valueType: VAL_NUMBER,
+			valueType: VAL_NIL,
 			val:       v,
 		}
 	}
@@ -69,11 +69,11 @@ func (array *ValueArray) free() {
 }
 
 func printValue(value Value) {
-	switch value.valueType{
+	switch value.valueType {
 	case VAL_BOOL:
 		if value.asBool() {
 			fmt.Printf("true")
-		}else{
+		} else {
 			fmt.Printf("false")
 		}
 	case VAL_NIL:
