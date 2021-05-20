@@ -120,6 +120,8 @@ func run() InterpretResult {
 			BINARY_OP('*')
 		case OP_DIVIDE:
 			BINARY_OP('/')
+		case OP_NOT:
+			vm.push(*VAL(isFalsey(vm.pop())))
 		case OP_NEGATE:
 			{
 				if !vm.peek(0).isType(VAL_NUMBER) {
@@ -140,6 +142,19 @@ func run() InterpretResult {
 
 func (vm *VM) peek(offset int) Value {
 	return vm.stack[vm.stackTop-1-offset]
+}
+
+func isFalsey(value Value) bool {
+	//nil is falsey
+	if value.isType(VAL_NIL) {
+		return true
+	} else if value.isType(VAL_BOOL) {
+		//false is falsey
+		if !value.asBool() {
+			return true
+		}
+	}
+	return false
 }
 
 func runtimeError(format string, a ...interface{}) {

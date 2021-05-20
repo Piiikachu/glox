@@ -103,6 +103,8 @@ func unary() {
 	parsePrecedence(PREC_UNARY)
 
 	switch operator {
+	case TOKEN_BANG:
+		emitByte(byte(OP_NOT))
 	case TOKEN_MINUS:
 		emitByte(byte(OP_NEGATE))
 	default:
@@ -231,7 +233,7 @@ func init() {
 		TOKEN_SEMICOLON:     {nil, nil, PREC_NONE},
 		TOKEN_SLASH:         {nil, binary, PREC_FACTOR},
 		TOKEN_STAR:          {nil, binary, PREC_FACTOR},
-		TOKEN_BANG:          {nil, nil, PREC_NONE},
+		TOKEN_BANG:          {unary, nil, PREC_NONE},
 		TOKEN_BANG_EQUAL:    {nil, nil, PREC_NONE},
 		TOKEN_EQUAL:         {nil, nil, PREC_NONE},
 		TOKEN_EQUAL_EQUAL:   {nil, nil, PREC_NONE},
