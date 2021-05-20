@@ -156,7 +156,7 @@ func (s *Scanner) skipWhiteSpace() {
 			s.advance()
 		case '\r':
 			s.advance()
-		case 't':
+		case '\t':
 			s.advance()
 		case '\n':
 			s.line++
