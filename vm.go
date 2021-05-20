@@ -106,6 +106,12 @@ func run() InterpretResult {
 				constant := vm.READ_CONSTANT()
 				vm.push(constant)
 			}
+		case OP_NIL:
+			vm.push(*VAL(nil))
+		case OP_TRUE:
+			vm.push(*VAL(true))
+		case OP_FALSE:
+			vm.push(*VAL(false))
 		case OP_ADD:
 			BINARY_OP('+')
 		case OP_SUBSTRACT:
@@ -115,7 +121,13 @@ func run() InterpretResult {
 		case OP_DIVIDE:
 			BINARY_OP('/')
 		case OP_NEGATE:
-			vm.push(-vm.pop())
+			{
+				if !vm.peek(0).isType(VAL_NUMBER) {
+					runtimeError("Operand must be a number.")
+					return INTERPRET_RUNTIME_ERROR
+				}
+				vm.push(*VAL(-vm.pop().asNumber()))
+			}
 		case OP_RETURN:
 			{
 				printValue(vm.pop())
@@ -124,6 +136,19 @@ func run() InterpretResult {
 			}
 		}
 	}
+}
+
+func (vm *VM) peek(offset int) Value {
+	return vm.stack[vm.stackTop-1-offset]
+}
+
+func runtimeError(format string, a ...interface{}) {
+	fmt.Fprintf(os.Stderr, format+"\n", a)
+
+	instruction := vm.currentIP - vm.chunk.currentCode - 1
+	line := vm.chunk.lines[instruction]
+	fmt.Fprintf(os.Stderr, "[line %d] in script\n", line)
+	resetStack()
 }
 
 func (vm *VM) READ_BYTE() byte {
@@ -144,17 +169,22 @@ func (vm *VM) getIP() byte {
 	return vm.ips[vm.currentIP]
 }
 
-func BINARY_OP(op rune) {
-	b := vm.pop()
-	a := vm.pop()
+func BINARY_OP(op rune) InterpretResult {
+	if !vm.peek(0).isType(VAL_NUMBER) || !vm.peek(1).isType(VAL_NUMBER) {
+		runtimeError("Operands must be numbers.")
+		return INTERPRET_RUNTIME_ERROR
+	}
+	b := vm.pop().asNumber()
+	a := vm.pop().asNumber()
 	switch op {
 	case '+':
-		vm.push(a + b)
+		vm.push(*VAL(a + b))
 	case '-':
-		vm.push(a - b)
+		vm.push(*VAL(a - b))
 	case '*':
-		vm.push(a * b)
+		vm.push(*VAL(a * b))
 	case '/':
-		vm.push(a / b)
+		vm.push(*VAL(a / b))
 	}
+	return INTERPRET_OK
 }

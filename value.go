@@ -1,11 +1,61 @@
 package main
 
-type Value float64
+import "fmt"
+
+type Value struct {
+	valueType ValueType
+	val       interface{}
+}
 
 type ValueArray struct {
 	capacity int
 	count    int
 	values   []Value
+}
+
+type ValueType byte
+
+const (
+	VAL_BOOL ValueType = iota
+	VAL_NIL
+	VAL_NUMBER
+)
+
+func VAL(value interface{}) *Value {
+	switch v := value.(type) {
+	case bool:
+		return &Value{
+			valueType: VAL_BOOL,
+			val:       v,
+		}
+	case float64:
+		return &Value{
+			valueType: VAL_NUMBER,
+			val:       v,
+		}
+	case nil:
+		return &Value{
+			valueType: VAL_NUMBER,
+			val:       v,
+		}
+	default:
+		return &Value{
+			valueType: VAL_NUMBER,
+			val:       v,
+		}
+	}
+}
+
+func (value Value) asBool() bool {
+	return value.val.(bool)
+}
+
+func (value Value) asNumber() float64 {
+	return value.val.(float64)
+}
+
+func (value Value) isType(valType ValueType) bool {
+	return value.valueType == valType
 }
 
 func (array *ValueArray) write(value Value) {
@@ -16,4 +66,19 @@ func (array *ValueArray) write(value Value) {
 
 func (array *ValueArray) free() {
 	array = new(ValueArray)
+}
+
+func printValue(value Value) {
+	switch value.valueType{
+	case VAL_BOOL:
+		if value.asBool() {
+			fmt.Printf("true")
+		}else{
+			fmt.Printf("false")
+		}
+	case VAL_NIL:
+		fmt.Printf("nil")
+	case VAL_NUMBER:
+		fmt.Printf("%g", value.asNumber())
+	}
 }

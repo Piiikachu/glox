@@ -88,7 +88,7 @@ func parsePrecedence(p Precedence) {
 }
 
 func number() {
-	value := Value(parser.previous.literal.(float64))
+	value := *VAL(parser.previous.literal.(float64))
 	emitConstant(value)
 }
 
@@ -128,6 +128,19 @@ func binary() {
 		return
 	}
 
+}
+
+func literal() {
+	switch parser.previous.tokenType {
+	case TOKEN_FALSE:
+		emitByte(byte(OP_FALSE))
+	case TOKEN_NIL:
+		emitByte(byte(OP_NIL))
+	case TOKEN_TRUE:
+		emitByte(byte(OP_TRUE))
+	default:
+		return
+	}
 }
 
 func (p *Parser) consume(t TokenType, msg string) {
@@ -232,17 +245,17 @@ func init() {
 		TOKEN_AND:           {nil, nil, PREC_NONE},
 		TOKEN_CLASS:         {nil, nil, PREC_NONE},
 		TOKEN_ELSE:          {nil, nil, PREC_NONE},
-		TOKEN_FALSE:         {nil, nil, PREC_NONE},
+		TOKEN_FALSE:         {literal, nil, PREC_NONE},
 		TOKEN_FOR:           {nil, nil, PREC_NONE},
 		TOKEN_FUN:           {nil, nil, PREC_NONE},
 		TOKEN_IF:            {nil, nil, PREC_NONE},
-		TOKEN_NIL:           {nil, nil, PREC_NONE},
+		TOKEN_NIL:           {literal, nil, PREC_NONE},
 		TOKEN_OR:            {nil, nil, PREC_NONE},
 		TOKEN_PRINT:         {nil, nil, PREC_NONE},
 		TOKEN_RETURN:        {nil, nil, PREC_NONE},
 		TOKEN_SUPER:         {nil, nil, PREC_NONE},
 		TOKEN_THIS:          {nil, nil, PREC_NONE},
-		TOKEN_TRUE:          {nil, nil, PREC_NONE},
+		TOKEN_TRUE:          {literal, nil, PREC_NONE},
 		TOKEN_VAR:           {nil, nil, PREC_NONE},
 		TOKEN_WHILE:         {nil, nil, PREC_NONE},
 		TOKEN_ERROR:         {nil, nil, PREC_NONE},

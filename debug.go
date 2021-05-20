@@ -21,6 +21,12 @@ func disassembleInstruction(c *Chunk, offset int) int {
 	switch OpCode(instruction) {
 	case OP_CONSTANT:
 		return constantInstruction("OP_CONSTANT", c, offset)
+	case OP_NIL:
+		return simpleInstruction("OP_NIL", offset)
+	case OP_TRUE:
+		return simpleInstruction("OP_TRUE", offset)
+	case OP_FALSE:
+		return simpleInstruction("OP_FALSE", offset)
 	case OP_ADD:
 		return simpleInstruction("OP_ADD", offset)
 	case OP_SUBSTRACT:
@@ -50,8 +56,4 @@ func constantInstruction(name string, chunk *Chunk, offset int) int {
 	printValue(chunk.constants.values[constant])
 	fmt.Println()
 	return offset + 2
-}
-
-func printValue(value Value) {
-	fmt.Printf("%g", value)
 }
