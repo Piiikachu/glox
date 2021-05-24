@@ -43,10 +43,12 @@ var parser = &Parser{
 }
 
 var compilingChunk *Chunk
+var scanner *Scanner
 
 var rules map[TokenType]ParseRule
 
 func compile(source string, chunk *Chunk) bool {
+	scanner = new(Scanner)
 	scanner.init(source)
 	compilingChunk = chunk
 	parser.advance()
@@ -88,7 +90,7 @@ func parsePrecedence(p Precedence) {
 }
 
 func number() {
-	value :=NUMBER_VAL(parser.previous.literal.(float64))
+	value := NUMBER_VAL(parser.previous.literal.(float64))
 	emitConstant(value)
 }
 
