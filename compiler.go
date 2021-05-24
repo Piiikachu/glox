@@ -88,7 +88,7 @@ func parsePrecedence(p Precedence) {
 }
 
 func number() {
-	value := VAL(parser.previous.literal.(float64))
+	value :=NUMBER_VAL(parser.previous.literal.(float64))
 	emitConstant(value)
 }
 
@@ -155,6 +155,11 @@ func literal() {
 	default:
 		return
 	}
+}
+
+func gstring() {
+	str := parser.previous.literal.(string)
+	emitConstant(OBJ_VAL(newObjString(str)))
 }
 
 func (p *Parser) consume(t TokenType, msg string) {
@@ -254,7 +259,7 @@ func init() {
 		TOKEN_LESS:          {nil, binary, PREC_COMPARISON},
 		TOKEN_LESS_EQUAL:    {nil, binary, PREC_COMPARISON},
 		TOKEN_IDENTIFIER:    {nil, nil, PREC_NONE},
-		TOKEN_STRING:        {nil, nil, PREC_NONE},
+		TOKEN_STRING:        {gstring, nil, PREC_NONE},
 		TOKEN_NUMBER:        {number, nil, PREC_NONE},
 		TOKEN_AND:           {nil, nil, PREC_NONE},
 		TOKEN_CLASS:         {nil, nil, PREC_NONE},

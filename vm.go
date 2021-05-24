@@ -107,23 +107,34 @@ func run() InterpretResult {
 				vm.push(constant)
 			}
 		case OP_NIL:
-			vm.push(VAL(nil))
+			vm.push(NIL_VAL())
 		case OP_TRUE:
-			vm.push(VAL(true))
+			vm.push(BOOL_VAL(true))
 		case OP_FALSE:
-			vm.push(VAL(false))
+			vm.push(BOOL_VAL(false))
 		case OP_EQUAL:
 			{
 				b := vm.pop()
 				a := vm.pop()
-				vm.push(VAL(a.equals(b)))
+				vm.push(BOOL_VAL(a.equals(b)))
 			}
 		case OP_GREATER:
 			BINARY_OP('>')
 		case OP_LESS:
 			BINARY_OP('<')
 		case OP_ADD:
-			BINARY_OP('+')
+			v1 := vm.peek(0)
+			v2 := vm.peek(1)
+			if v1.isString() && v2.isString() {
+				concatenate()
+			} else if v1.isType(VAL_NUMBER) && v2.isType(VAL_NUMBER) {
+				b := vm.pop().asNumber()
+				a := vm.pop().asNumber()
+				vm.push(NUMBER_VAL(a + b))
+			} else {
+				runtimeError("Operands must be two numbers or two strings.")
+				return INTERPRET_RUNTIME_ERROR
+			}
 		case OP_SUBSTRACT:
 			BINARY_OP('-')
 		case OP_MULTIPLY:
@@ -131,14 +142,14 @@ func run() InterpretResult {
 		case OP_DIVIDE:
 			BINARY_OP('/')
 		case OP_NOT:
-			vm.push(VAL(isFalsey(vm.pop())))
+			vm.push(BOOL_VAL(isFalsey(vm.pop())))
 		case OP_NEGATE:
 			{
 				if !vm.peek(0).isType(VAL_NUMBER) {
 					runtimeError("Operand must be a number.")
 					return INTERPRET_RUNTIME_ERROR
 				}
-				vm.push(VAL(-vm.pop().asNumber()))
+				vm.push(NUMBER_VAL(-vm.pop().asNumber()))
 			}
 		case OP_RETURN:
 			{
@@ -165,6 +176,18 @@ func isFalsey(value Value) bool {
 		}
 	}
 	return false
+}
+
+func concatenate() {
+	b := vm.pop().asString()
+	a := vm.pop().asString()
+	length := b.length + a.length
+	str := a.str + b.str
+	result := ObjString{
+		length: length,
+		str:    str,
+	}
+	vm.push(OBJ_VAL(&result))
 }
 
 func runtimeError(format string, a ...interface{}) {
@@ -203,17 +226,17 @@ func BINARY_OP(op rune) InterpretResult {
 	a := vm.pop().asNumber()
 	switch op {
 	case '+':
-		vm.push(VAL(a + b))
+		vm.push(NUMBER_VAL(a + b))
 	case '-':
-		vm.push(VAL(a - b))
+		vm.push(NUMBER_VAL(a - b))
 	case '*':
-		vm.push(VAL(a * b))
+		vm.push(NUMBER_VAL(a * b))
 	case '/':
-		vm.push(VAL(a / b))
+		vm.push(NUMBER_VAL(a / b))
 	case '<':
-		vm.push(VAL(a < b))
+		vm.push(BOOL_VAL(a < b))
 	case '>':
-		vm.push(VAL(a > b))
+		vm.push(BOOL_VAL(a > b))
 	}
 	return INTERPRET_OK
 }

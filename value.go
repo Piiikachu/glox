@@ -19,30 +19,34 @@ const (
 	VAL_BOOL ValueType = iota
 	VAL_NIL
 	VAL_NUMBER
+	VAL_OBJ
 )
 
-func VAL(value interface{}) Value {
-	switch v := value.(type) {
-	case bool:
-		return Value{
-			valueType: VAL_BOOL,
-			val:       v,
-		}
-	case float64:
-		return Value{
-			valueType: VAL_NUMBER,
-			val:       v,
-		}
-	case nil:
-		return Value{
-			valueType: VAL_NIL,
-			val:       v,
-		}
-	default:
-		return Value{
-			valueType: VAL_NIL,
-			val:       v,
-		}
+func BOOL_VAL(value bool) Value {
+	return Value{
+		valueType: VAL_BOOL,
+		val:       value,
+	}
+
+}
+func NUMBER_VAL(value float64) Value {
+	return Value{
+		valueType: VAL_NUMBER,
+		val:       value,
+	}
+}
+
+func NIL_VAL() Value {
+	return Value{
+		valueType: VAL_NIL,
+		val:       nil,
+	}
+}
+
+func OBJ_VAL(value Obj) Value {
+	return Value{
+		valueType: VAL_OBJ,
+		val:       value,
 	}
 }
 
@@ -52,6 +56,10 @@ func (value Value) asBool() bool {
 
 func (value Value) asNumber() float64 {
 	return value.val.(float64)
+}
+
+func (value Value) asObj() Obj {
+	return value.val.(Obj)
 }
 
 func (value Value) isType(valType ValueType) bool {
@@ -69,6 +77,12 @@ func (v1 Value) equals(v2 Value) bool {
 		return true
 	case VAL_NUMBER:
 		return v1.asNumber() == v2.asNumber()
+	case VAL_OBJ:
+		{
+			a := v1.asString()
+			b := v2.asString()
+			return a == b
+		}
 	default:
 		return false
 	}
@@ -96,5 +110,7 @@ func printValue(value Value) {
 		fmt.Printf("nil")
 	case VAL_NUMBER:
 		fmt.Printf("%g", value.asNumber())
+	case VAL_OBJ:
+		value.printObject()
 	}
 }
