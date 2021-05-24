@@ -1,4 +1,4 @@
-package main
+package glox
 
 import (
 	"bufio"
@@ -9,7 +9,7 @@ import (
 
 const STACK_MAX = 256
 
-var vm = new(VM)
+// var vm = new(VM)
 
 type VM struct {
 	chunk     *Chunk
@@ -27,7 +27,7 @@ const (
 	INTERPRET_RUNTIME_ERROR
 )
 
-func repl() {
+func(vm *VM) Repl() {
 	for {
 		fmt.Print("> ")
 		reader := bufio.NewReader(os.Stdin)
@@ -36,17 +36,17 @@ func repl() {
 			os.Stderr.WriteString("Read error")
 			return
 		}
-		interpret(line)
+		vm.interpret(line)
 	}
 }
 
-func runFile(path string) {
+func (vm *VM)RunFile(path string) {
 	buffer, err := ioutil.ReadFile(path)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	result := interpret(string(buffer))
+	result := vm.interpret(string(buffer))
 
 	if result == INTERPRET_COMPILE_ERROR {
 		os.Exit(65)
@@ -56,16 +56,16 @@ func runFile(path string) {
 	}
 }
 
-func (vm *VM) init() {
-	resetStack()
+func (vm *VM) Init() {
+	vm.resetStack()
 }
 
-func resetStack() {
+func (vm *VM) resetStack() {
 	vm.stackTop = 0
 }
 
-func (vm *VM) free() {
-
+func (vm *VM) Free() {
+	vm.resetStack()
 }
 
 func (vm *VM) push(value Value) {
@@ -78,18 +78,18 @@ func (vm *VM) pop() Value {
 	return value
 }
 
-func interpret(source string) InterpretResult {
+func (vm *VM) interpret(source string) InterpretResult {
 	chunk := new(Chunk)
 	if !compile(source, chunk) {
 		return INTERPRET_COMPILE_ERROR
 	}
 	vm.chunk = chunk
 	vm.ips = vm.chunk.code
-	result := run()
+	result := vm.run()
 	return result
 }
 
-func run() InterpretResult {
+func (vm *VM) run() InterpretResult {
 	for {
 		if DEBUG_TRACE_EXECUTION {
 			fmt.Printf("          ")
@@ -119,34 +119,34 @@ func run() InterpretResult {
 				vm.push(BOOL_VAL(a.equals(b)))
 			}
 		case OP_GREATER:
-			BINARY_OP('>')
+			vm.BINARY_OP('>')
 		case OP_LESS:
-			BINARY_OP('<')
+			vm.BINARY_OP('<')
 		case OP_ADD:
 			v1 := vm.peek(0)
 			v2 := vm.peek(1)
 			if v1.isString() && v2.isString() {
-				concatenate()
+				vm.concatenate()
 			} else if v1.isType(VAL_NUMBER) && v2.isType(VAL_NUMBER) {
 				b := vm.pop().asNumber()
 				a := vm.pop().asNumber()
 				vm.push(NUMBER_VAL(a + b))
 			} else {
-				runtimeError("Operands must be two numbers or two strings.")
+				vm.runtimeError("Operands must be two numbers or two strings.")
 				return INTERPRET_RUNTIME_ERROR
 			}
 		case OP_SUBSTRACT:
-			BINARY_OP('-')
+			vm.BINARY_OP('-')
 		case OP_MULTIPLY:
-			BINARY_OP('*')
+			vm.BINARY_OP('*')
 		case OP_DIVIDE:
-			BINARY_OP('/')
+			vm.BINARY_OP('/')
 		case OP_NOT:
 			vm.push(BOOL_VAL(isFalsey(vm.pop())))
 		case OP_NEGATE:
 			{
 				if !vm.peek(0).isType(VAL_NUMBER) {
-					runtimeError("Operand must be a number.")
+					vm.runtimeError("Operand must be a number.")
 					return INTERPRET_RUNTIME_ERROR
 				}
 				vm.push(NUMBER_VAL(-vm.pop().asNumber()))
@@ -178,7 +178,7 @@ func isFalsey(value Value) bool {
 	return false
 }
 
-func concatenate() {
+func (vm *VM) concatenate() {
 	b := vm.pop().asString()
 	a := vm.pop().asString()
 	length := b.length + a.length
@@ -190,13 +190,13 @@ func concatenate() {
 	vm.push(OBJ_VAL(&result))
 }
 
-func runtimeError(format string, a ...interface{}) {
+func (vm *VM) runtimeError(format string, a ...interface{}) {
 	fmt.Fprintf(os.Stderr, format+"\n", a)
 
 	instruction := vm.currentIP - vm.chunk.currentCode - 1
 	line := vm.chunk.lines[instruction]
 	fmt.Fprintf(os.Stderr, "[line %d] in script\n", line)
-	resetStack()
+	vm.resetStack()
 }
 
 func (vm *VM) READ_BYTE() byte {
@@ -217,9 +217,9 @@ func (vm *VM) getIP() byte {
 	return vm.ips[vm.currentIP]
 }
 
-func BINARY_OP(op rune) InterpretResult {
+func (vm *VM) BINARY_OP(op rune) InterpretResult {
 	if !vm.peek(0).isType(VAL_NUMBER) || !vm.peek(1).isType(VAL_NUMBER) {
-		runtimeError("Operands must be numbers.")
+		vm.runtimeError("Operands must be numbers.")
 		return INTERPRET_RUNTIME_ERROR
 	}
 	b := vm.pop().asNumber()

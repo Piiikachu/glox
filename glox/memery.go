@@ -1,4 +1,4 @@
-package main
+package glox
 
 func GROW_CAPACITY(capacity int) int {
 	if capacity < 8 {
