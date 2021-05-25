@@ -44,10 +44,12 @@ var parser = &Parser{
 
 var compilingChunk *Chunk
 var scanner *Scanner
+var vm *VM
 
 var rules map[TokenType]ParseRule
 
-func compile(source string, chunk *Chunk) bool {
+func (v *VM) compile(source string, chunk *Chunk) bool {
+	vm = v
 	scanner = new(Scanner)
 	scanner.init(source)
 	compilingChunk = chunk

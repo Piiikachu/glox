@@ -4,11 +4,14 @@ import "fmt"
 
 type Obj interface {
 	ObjType() ObjType
+	next() *Obj
+	free()
 }
 
 type ObjString struct {
-	length int
-	str    string
+	length  int
+	str     string
+	nextObj Obj
 }
 
 type ObjType byte
@@ -19,6 +22,18 @@ const (
 
 func (os *ObjString) ObjType() ObjType {
 	return OBJ_STRING
+}
+
+func (os *ObjString) next() *Obj {
+	if os.nextObj == nil {
+		return nil
+	}
+	return &(os.nextObj)
+}
+
+func (os *ObjString) free() {
+	os.str = ""
+	os.length = 0
 }
 
 func (v Value) ObjType() ObjType {
@@ -44,14 +59,17 @@ func (v Value) asCString() []byte {
 }
 
 func newObjString(str string) *ObjString {
-	return &ObjString{
+	obj := &ObjString{
 		length: len(str),
 		str:    str,
 	}
+	obj.nextObj = vm.objects
+	vm.objects = obj
+	return obj
 }
 
-func (v *Value) printObject(){
-	switch v.ObjType(){
+func (v *Value) printObject() {
+	switch v.ObjType() {
 	case OBJ_STRING:
 		fmt.Printf(v.asString().str)
 	}

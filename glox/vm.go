@@ -9,14 +9,13 @@ import (
 
 const STACK_MAX = 256
 
-// var vm = new(VM)
-
 type VM struct {
 	chunk     *Chunk
 	ips       []byte
 	stack     [STACK_MAX]Value
 	stackTop  int
 	currentIP int
+	objects   Obj
 }
 
 type InterpretResult byte
@@ -27,7 +26,7 @@ const (
 	INTERPRET_RUNTIME_ERROR
 )
 
-func(vm *VM) Repl() {
+func (vm *VM) Repl() {
 	for {
 		fmt.Print("> ")
 		reader := bufio.NewReader(os.Stdin)
@@ -40,7 +39,7 @@ func(vm *VM) Repl() {
 	}
 }
 
-func (vm *VM)RunFile(path string) {
+func (vm *VM) RunFile(path string) {
 	buffer, err := ioutil.ReadFile(path)
 	if err != nil {
 		fmt.Println(err)
@@ -58,6 +57,7 @@ func (vm *VM)RunFile(path string) {
 
 func (vm *VM) Init() {
 	vm.resetStack()
+	vm.objects = nil
 }
 
 func (vm *VM) resetStack() {
@@ -66,6 +66,19 @@ func (vm *VM) resetStack() {
 
 func (vm *VM) Free() {
 	vm.resetStack()
+	vm.freeObjects()
+}
+
+func (vm *VM) freeObjects() {
+	obj := vm.objects
+	for obj != nil && obj.next() != nil {
+		next := obj.next()
+		if next == nil {
+			return
+		}
+		(*next).free()
+		obj = *next
+	}
 }
 
 func (vm *VM) push(value Value) {
@@ -80,7 +93,7 @@ func (vm *VM) pop() Value {
 
 func (vm *VM) interpret(source string) InterpretResult {
 	chunk := new(Chunk)
-	if !compile(source, chunk) {
+	if !vm.compile(source, chunk) {
 		return INTERPRET_COMPILE_ERROR
 	}
 	vm.chunk = chunk
