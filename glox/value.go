@@ -43,7 +43,7 @@ func NIL_VAL() Value {
 	}
 }
 
-func OBJ_VAL(value Obj) Value {
+func OBJ_VAL(value IObj) Value {
 	return Value{
 		valueType: VAL_OBJ,
 		val:       value,
@@ -58,8 +58,8 @@ func (value Value) asNumber() float64 {
 	return value.val.(float64)
 }
 
-func (value Value) asObj() Obj {
-	return value.val.(Obj)
+func (value Value) asObj() IObj {
+	return value.val.(IObj)
 }
 
 func (value Value) isType(valType ValueType) bool {
@@ -79,9 +79,9 @@ func (v1 Value) equals(v2 Value) bool {
 		return v1.asNumber() == v2.asNumber()
 	case VAL_OBJ:
 		{
-			a := v1.asString()
-			b := v2.asString()
-			return a == b
+			a := v1.asObj()
+			b := v2.asObj()
+			return a.getHash() == b.getHash()
 		}
 	default:
 		return false

@@ -2,16 +2,24 @@ package glox
 
 import "fmt"
 
-type Obj interface {
+type Hash uint32
+
+type IObj interface {
 	ObjType() ObjType
-	next() *Obj
+	next() IObj
 	free()
+	getHash() Hash
+}
+
+type Obj struct {
+	nextObj IObj
+	hash    Hash
 }
 
 type ObjString struct {
-	length  int
-	str     string
-	nextObj Obj
+	Obj
+	length int
+	str    string
 }
 
 type ObjType byte
@@ -24,11 +32,12 @@ func (os *ObjString) ObjType() ObjType {
 	return OBJ_STRING
 }
 
-func (os *ObjString) next() *Obj {
-	if os.nextObj == nil {
-		return nil
-	}
-	return &(os.nextObj)
+func (obj *Obj) next() IObj {
+	return obj.nextObj
+}
+
+func (obj *Obj) getHash() Hash {
+	return obj.hash
 }
 
 func (os *ObjString) free() {
@@ -64,8 +73,21 @@ func newObjString(str string) *ObjString {
 		str:    str,
 	}
 	obj.nextObj = vm.objects
+	obj.hash = hashString(str)
 	vm.objects = obj
+
+	vm.strings.tableSet(*obj,NIL_VAL())
+
 	return obj
+}
+
+func hashString(str string) Hash {
+	hash := 2166136261
+	for _, b := range []byte(str) {
+		hash ^= int(b)
+		hash *= 16777619
+	}
+	return Hash(hash)
 }
 
 func (v *Value) printObject() {

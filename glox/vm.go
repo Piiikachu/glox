@@ -15,7 +15,8 @@ type VM struct {
 	stack     [STACK_MAX]Value
 	stackTop  int
 	currentIP int
-	objects   Obj
+	objects   IObj
+	strings   Table
 }
 
 type InterpretResult byte
@@ -58,6 +59,7 @@ func (vm *VM) RunFile(path string) {
 func (vm *VM) Init() {
 	vm.resetStack()
 	vm.objects = nil
+	vm.strings.init()
 }
 
 func (vm *VM) resetStack() {
@@ -67,6 +69,7 @@ func (vm *VM) resetStack() {
 func (vm *VM) Free() {
 	vm.resetStack()
 	vm.freeObjects()
+	vm.strings.free()
 }
 
 func (vm *VM) freeObjects() {
@@ -76,8 +79,8 @@ func (vm *VM) freeObjects() {
 		if next == nil {
 			return
 		}
-		(*next).free()
-		obj = *next
+		next.free()
+		obj = next
 	}
 }
 
