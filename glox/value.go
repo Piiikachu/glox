@@ -81,7 +81,7 @@ func (v1 Value) equals(v2 Value) bool {
 		{
 			a := v1.asObj()
 			b := v2.asObj()
-			return a.getHash() == b.getHash()
+			return a.hashCode() == b.hashCode()
 		}
 	default:
 		return false

@@ -2,13 +2,11 @@ package glox
 
 import "fmt"
 
-type Hash uint32
-
 type IObj interface {
+	Hashable
 	ObjType() ObjType
 	next() IObj
 	free()
-	getHash() Hash
 }
 
 type Obj struct {
@@ -36,7 +34,7 @@ func (obj *Obj) next() IObj {
 	return obj.nextObj
 }
 
-func (obj *Obj) getHash() Hash {
+func (obj *Obj) hashCode() Hash {
 	return obj.hash
 }
 
@@ -76,7 +74,7 @@ func newObjString(str string) *ObjString {
 	obj.hash = hashString(str)
 	vm.objects = obj
 
-	vm.strings.tableSet(*obj,NIL_VAL())
+	vm.strings.tableSet(obj, NIL_VAL())
 
 	return obj
 }
