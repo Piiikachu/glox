@@ -17,6 +17,7 @@ type VM struct {
 	currentIP int
 	objects   IObj
 	strings   Table
+	globals   Table
 }
 
 type InterpretResult byte
@@ -60,6 +61,7 @@ func (vm *VM) Init() {
 	vm.resetStack()
 	vm.objects = nil
 	vm.strings.init()
+	vm.globals.init()
 }
 
 func (vm *VM) resetStack() {
@@ -70,6 +72,7 @@ func (vm *VM) Free() {
 	vm.resetStack()
 	vm.freeObjects()
 	vm.strings.free()
+	vm.globals.free()
 }
 
 func (vm *VM) freeObjects() {
@@ -128,6 +131,24 @@ func (vm *VM) run() InterpretResult {
 			vm.push(BOOL_VAL(true))
 		case OP_FALSE:
 			vm.push(BOOL_VAL(false))
+		case OP_POP:
+			vm.pop()
+		case OP_GET_GLOBAL:
+			{
+				name := vm.READ_STRING()
+				value, ok := vm.globals.tableGet(&name)
+				if !ok {
+					vm.runtimeError("Undefined variable '%s'.", name.str)
+					return INTERPRET_RUNTIME_ERROR
+				}
+				vm.push(value)
+			}
+		case OP_DEFINE_GLOBAL:
+			{
+				name := vm.READ_STRING()
+				vm.globals.tableSet(&name, vm.peek(0))
+				vm.pop()
+			}
 		case OP_EQUAL:
 			{
 				b := vm.pop()
@@ -227,6 +248,10 @@ func (vm *VM) READ_BYTE() byte {
 
 func (vm *VM) READ_CONSTANT() Value {
 	return vm.getChunk().constants.values[vm.READ_BYTE()]
+}
+
+func (vm *VM) READ_STRING() ObjString {
+	return vm.READ_CONSTANT().asString()
 }
 
 func (vm *VM) getChunk() *Chunk {

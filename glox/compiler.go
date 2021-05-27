@@ -79,19 +79,78 @@ func (p *Parser) expression() {
 }
 
 func (p *Parser) declaration() {
-	p.statement()
+	if p.match(TOKEN_VAR) {
+		p.varDeclaration()
+	} else {
+		p.statement()
+	}
+
+	if p.panicMode {
+		p.synchronize()
+	}
 }
 
 func (p *Parser) statement() {
 	if p.match(TOKEN_PRINT) {
 		p.printStatement()
+	} else {
+		p.expressionStatement()
 	}
+}
+
+func (p *Parser) expressionStatement() {
+	p.expression()
+	p.consume(TOKEN_SEMICOLON, "Expect ';' after value.")
+	emitByte(byte(OP_POP))
+}
+
+func (p *Parser) varDeclaration() {
+	global := p.parseVariable("Expect variable name.")
+
+	if p.match(TOKEN_EQUAL) {
+		p.expression()
+	} else {
+		emitByte(byte(OP_NIL))
+	}
+	p.consume(TOKEN_SEMICOLON, "Expect ';' after value.")
+
+	p.defineVariable(global)
 }
 
 func (p *Parser) printStatement() {
 	p.expression()
 	p.consume(TOKEN_SEMICOLON, "Expect ';' after value.")
 	emitByte(byte(OP_PRINT))
+}
+
+func (p *Parser) synchronize() {
+	p.panicMode = false
+
+	for p.current.tokenType != TOKEN_EOF {
+		if p.previous.tokenType == TOKEN_SEMICOLON {
+			return
+		}
+		switch p.current.tokenType {
+		case TOKEN_CLASS:
+			return
+		case TOKEN_FUN:
+			return
+		case TOKEN_VAR:
+			return
+		case TOKEN_FOR:
+			return
+		case TOKEN_IF:
+			return
+		case TOKEN_WHILE:
+			return
+		case TOKEN_PRINT:
+			return
+		case TOKEN_RETURN:
+			return
+		default:
+		}
+		p.advance()
+	}
 }
 
 func (p *Parser) match(t TokenType) bool {
@@ -120,6 +179,24 @@ func parsePrecedence(p Precedence) {
 		infix := rules[parser.previous.tokenType].infix
 		infix()
 	}
+}
+
+func (p *Parser) defineVariable(global byte) {
+	emitBytes(byte(OP_DEFINE_GLOBAL), global)
+}
+
+func (p *Parser) parseVariable(errorMsg string) byte {
+	parser.consume(TOKEN_IDENTIFIER, errorMsg)
+	return parser.previous.identifierConstant()
+}
+
+func (t *Token) identifierConstant() byte {
+	name := t.lexeme
+	return makeConstant(OBJ_VAL(newObjString(name)))
+}
+func (t *Token) namedVariable() {
+	arg := t.identifierConstant()
+	emitBytes(byte(OP_GET_GLOBAL), arg)
 }
 
 func number() {
@@ -195,6 +272,10 @@ func literal() {
 func gstring() {
 	str := parser.previous.literal.(string)
 	emitConstant(OBJ_VAL(newObjString(str)))
+}
+
+func variable() {
+	parser.previous.namedVariable()
 }
 
 func (p *Parser) consume(t TokenType, msg string) {
@@ -293,7 +374,7 @@ func init() {
 		TOKEN_GREATER_EQUAL: {nil, binary, PREC_COMPARISON},
 		TOKEN_LESS:          {nil, binary, PREC_COMPARISON},
 		TOKEN_LESS_EQUAL:    {nil, binary, PREC_COMPARISON},
-		TOKEN_IDENTIFIER:    {nil, nil, PREC_NONE},
+		TOKEN_IDENTIFIER:    {variable, nil, PREC_NONE},
 		TOKEN_STRING:        {gstring, nil, PREC_NONE},
 		TOKEN_NUMBER:        {number, nil, PREC_NONE},
 		TOKEN_AND:           {nil, nil, PREC_NONE},
