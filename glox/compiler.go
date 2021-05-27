@@ -54,8 +54,11 @@ func (v *VM) compile(source string, chunk *Chunk) bool {
 	scanner.init(source)
 	compilingChunk = chunk
 	parser.advance()
-	parser.expression()
-	parser.consume(TOKEN_EOF, "Expect end of expression.")
+
+	for !parser.match(TOKEN_EOF) {
+		parser.declaration()
+	}
+
 	parser.endCompiler()
 	return !parser.hadError
 }
@@ -73,6 +76,34 @@ func (p *Parser) advance() {
 
 func (p *Parser) expression() {
 	parsePrecedence(PREC_ASSIGNMENT)
+}
+
+func (p *Parser) declaration() {
+	p.statement()
+}
+
+func (p *Parser) statement() {
+	if p.match(TOKEN_PRINT) {
+		p.printStatement()
+	}
+}
+
+func (p *Parser) printStatement() {
+	p.expression()
+	p.consume(TOKEN_SEMICOLON, "Expect ';' after value.")
+	emitByte(byte(OP_PRINT))
+}
+
+func (p *Parser) match(t TokenType) bool {
+	if !p.check(t) {
+		return false
+	}
+	p.advance()
+	return true
+}
+
+func (p *Parser) check(t TokenType) bool {
+	return p.current.tokenType == t
 }
 
 func parsePrecedence(p Precedence) {

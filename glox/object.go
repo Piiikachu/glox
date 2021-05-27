@@ -79,6 +79,7 @@ func newObjString(str string) *ObjString {
 	return obj
 }
 
+// todo: replace with hash/fnv Sum32
 func hashString(str string) Hash {
 	hash := 2166136261
 	for _, b := range []byte(str) {

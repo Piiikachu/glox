@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "args": [
-                "test/string.lox"
+                "test/globalvar.lox"
             ],
             "program": "${workspaceRoot}/main.go"
         }

@@ -167,10 +167,14 @@ func (vm *VM) run() InterpretResult {
 				}
 				vm.push(NUMBER_VAL(-vm.pop().asNumber()))
 			}
-		case OP_RETURN:
+		case OP_PRINT:
 			{
 				printValue(vm.pop())
 				fmt.Println()
+			}
+		case OP_RETURN:
+			{
+				// Exit interpreter
 				return INTERPRET_OK
 			}
 		}
