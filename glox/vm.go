@@ -149,6 +149,15 @@ func (vm *VM) run() InterpretResult {
 				vm.globals.tableSet(&name, vm.peek(0))
 				vm.pop()
 			}
+		case OP_SET_GLOBAL:
+			{
+				name := vm.READ_STRING()
+				if !vm.globals.tableFind(name.str) {
+					vm.runtimeError("Undefined variable '%s'.", name.str)
+					return INTERPRET_RUNTIME_ERROR
+				}
+				vm.globals.tableSet(&name, vm.peek(0))
+			}
 		case OP_EQUAL:
 			{
 				b := vm.pop()

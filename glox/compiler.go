@@ -29,7 +29,7 @@ const (
 	PREC_PRIMARY
 )
 
-type ParseFn func()
+type ParseFn func(bool)
 
 type ParseRule struct {
 	prefix     ParseFn
@@ -172,12 +172,18 @@ func parsePrecedence(p Precedence) {
 		errorAtPrevious("Expect expression.")
 		return
 	}
-	prefix()
+
+	canAssign := p <= PREC_ASSIGNMENT
+	prefix(canAssign)
 
 	for p <= rules[parser.current.tokenType].precedence {
 		parser.advance()
 		infix := rules[parser.previous.tokenType].infix
-		infix()
+		infix(canAssign)
+	}
+
+	if canAssign && parser.match(TOKEN_EQUAL) {
+		errorAtPrevious("Invalid assignment target.")
 	}
 }
 
@@ -194,22 +200,28 @@ func (t *Token) identifierConstant() byte {
 	name := t.lexeme
 	return makeConstant(OBJ_VAL(newObjString(name)))
 }
-func (t *Token) namedVariable() {
+func (t *Token) namedVariable(canAssign bool) {
 	arg := t.identifierConstant()
-	emitBytes(byte(OP_GET_GLOBAL), arg)
+
+	if canAssign && parser.match(TOKEN_EQUAL) {
+		parser.expression()
+		emitBytes(byte(OP_SET_GLOBAL), arg)
+	} else {
+		emitBytes(byte(OP_GET_GLOBAL), arg)
+	}
 }
 
-func number() {
+func number(canAssign bool) {
 	value := NUMBER_VAL(parser.previous.literal.(float64))
 	emitConstant(value)
 }
 
-func grouping() {
+func grouping(canAssign bool) {
 	parser.expression()
 	parser.consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.")
 }
 
-func unary() {
+func unary(canAssign bool) {
 	operator := parser.previous.tokenType
 
 	parsePrecedence(PREC_UNARY)
@@ -224,7 +236,7 @@ func unary() {
 	}
 }
 
-func binary() {
+func binary(canAssign bool) {
 	operator := parser.previous.tokenType
 
 	parsePrecedence(rules[operator].precedence + 1)
@@ -256,7 +268,7 @@ func binary() {
 
 }
 
-func literal() {
+func literal(canAssign bool) {
 	switch parser.previous.tokenType {
 	case TOKEN_FALSE:
 		emitByte(byte(OP_FALSE))
@@ -269,13 +281,13 @@ func literal() {
 	}
 }
 
-func gstring() {
+func gstring(canAssign bool) {
 	str := parser.previous.literal.(string)
 	emitConstant(OBJ_VAL(newObjString(str)))
 }
 
-func variable() {
-	parser.previous.namedVariable()
+func variable(canAssign bool) {
+	parser.previous.namedVariable(canAssign)
 }
 
 func (p *Parser) consume(t TokenType, msg string) {
