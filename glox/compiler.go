@@ -13,6 +13,17 @@ type Parser struct {
 	panicMode bool
 }
 
+type Local struct {
+	name  Token
+	depth int
+}
+
+type Compiler struct {
+	locals     []Local
+	localCount int
+	scopeDepth int
+}
+
 type Precedence byte
 
 const (
@@ -42,6 +53,7 @@ var parser = &Parser{
 	panicMode: false,
 }
 
+var current *Compiler
 var compilingChunk *Chunk
 var scanner *Scanner
 var vm *VM
@@ -52,6 +64,10 @@ func (v *VM) compile(source string, chunk *Chunk) bool {
 	vm = v
 	scanner = new(Scanner)
 	scanner.init(source)
+
+	compiler := new(Compiler)
+	compiler.init()
+
 	compilingChunk = chunk
 	parser.advance()
 
@@ -61,6 +77,12 @@ func (v *VM) compile(source string, chunk *Chunk) bool {
 
 	parser.endCompiler()
 	return !parser.hadError
+}
+
+func (c *Compiler) init() {
+	c.localCount = 0
+	c.scopeDepth = 0
+	current = c
 }
 
 func (p *Parser) advance() {
@@ -93,8 +115,30 @@ func (p *Parser) declaration() {
 func (p *Parser) statement() {
 	if p.match(TOKEN_PRINT) {
 		p.printStatement()
+	} else if p.match(TOKEN_LEFT_BRACE) {
+		p.beginScope()
+		p.block()
+		p.endScope()
 	} else {
 		p.expressionStatement()
+	}
+}
+
+func (p *Parser) block() {
+	for !p.check(TOKEN_RIGHT_BRACE) && !p.check(TOKEN_EOF) {
+		p.declaration()
+	}
+}
+
+func (p *Parser) beginScope() {
+	current.scopeDepth++
+}
+
+func (p *Parser) endScope() {
+	current.scopeDepth--
+	for current.localCount > 0 && current.locals[current.localCount-1].depth > current.scopeDepth {
+		emitByte(byte(OP_POP))
+		current.localCount--
 	}
 }
 
@@ -188,11 +232,21 @@ func parsePrecedence(p Precedence) {
 }
 
 func (p *Parser) defineVariable(global byte) {
+	if current.scopeDepth > 0 {
+		return
+	}
+
 	emitBytes(byte(OP_DEFINE_GLOBAL), global)
 }
 
 func (p *Parser) parseVariable(errorMsg string) byte {
 	parser.consume(TOKEN_IDENTIFIER, errorMsg)
+
+	p.declareVariable()
+	if current.scopeDepth > 0 {
+		return 0
+	}
+
 	return parser.previous.identifierConstant()
 }
 
@@ -200,6 +254,42 @@ func (t *Token) identifierConstant() byte {
 	name := t.lexeme
 	return makeConstant(OBJ_VAL(newObjString(name)))
 }
+
+func (a *Token) identifierEqual(b *Token) bool {
+	return a.lexeme == b.lexeme
+}
+
+func (t *Token) addLocal() {
+	if current.localCount == math.MaxUint8 {
+		errorAtPrevious("Too many local variables in function.")
+		return
+	}
+
+	local := current.locals[current.localCount]
+	current.localCount++
+	local.name = *t
+	local.depth = current.scopeDepth
+}
+
+func (p *Parser) declareVariable() {
+	if current.scopeDepth == 0 {
+		return
+	}
+	name := p.previous
+
+	for _, l := range current.locals {
+		if l.depth != -1 && l.depth < current.scopeDepth {
+			break
+		}
+
+		if name.identifierEqual(&l.name) {
+			errorAtPrevious("Already variable with this name in this scope.")
+		}
+	}
+
+	name.addLocal()
+}
+
 func (t *Token) namedVariable(canAssign bool) {
 	arg := t.identifierConstant()
 
