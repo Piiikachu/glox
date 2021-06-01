@@ -133,6 +133,16 @@ func (vm *VM) run() InterpretResult {
 			vm.push(BOOL_VAL(false))
 		case OP_POP:
 			vm.pop()
+		case OP_GET_LOCAL:
+			{
+				slot := vm.READ_BYTE()
+				vm.push(vm.stack[slot])
+			}
+		case OP_SET_LOCAL:
+			{
+				slot := vm.READ_BYTE()
+				vm.stack[slot] = vm.peek(0)
+			}
 		case OP_GET_GLOBAL:
 			{
 				name := vm.READ_STRING()

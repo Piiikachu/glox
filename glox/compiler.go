@@ -265,10 +265,12 @@ func (t *Token) addLocal() {
 		return
 	}
 
-	local := current.locals[current.localCount]
+	local := Local{
+		name:  *t,
+		depth: current.scopeDepth,
+	}
+	current.locals = append(current.locals, local)
 	current.localCount++
-	local.name = *t
-	local.depth = current.scopeDepth
 }
 
 func (p *Parser) declareVariable() {
@@ -291,14 +293,32 @@ func (p *Parser) declareVariable() {
 }
 
 func (t *Token) namedVariable(canAssign bool) {
-	arg := t.identifierConstant()
+	var getOp, setOp byte
+	arg, ok := t.resolveLocal(current)
+	if ok {
+		getOp = byte(OP_GET_LOCAL)
+		setOp = byte(OP_SET_LOCAL)
+	} else {
+		arg = t.identifierConstant()
+		getOp = byte(OP_GET_GLOBAL)
+		setOp = byte(OP_SET_GLOBAL)
+	}
 
 	if canAssign && parser.match(TOKEN_EQUAL) {
 		parser.expression()
-		emitBytes(byte(OP_SET_GLOBAL), arg)
+		emitBytes(setOp, arg)
 	} else {
-		emitBytes(byte(OP_GET_GLOBAL), arg)
+		emitBytes(getOp, arg)
 	}
+}
+
+func (name *Token) resolveLocal(compile *Compiler) (byte, bool) {
+	for i, local := range compile.locals {
+		if name.identifierEqual(&local.name) {
+			return byte(i), true
+		}
+	}
+	return byte(0), false
 }
 
 func number(canAssign bool) {
