@@ -129,7 +129,7 @@ func (p *Parser) block() {
 		p.declaration()
 	}
 
-	p.consume(TOKEN_RIGHT_BRACE,"Expect '}' after block.")
+	p.consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.")
 }
 
 func (p *Parser) beginScope() {
@@ -138,7 +138,7 @@ func (p *Parser) beginScope() {
 
 func (p *Parser) endScope() {
 	current.scopeDepth--
-	
+
 	for current.localCount > 0 && current.locals[current.localCount-1].depth > current.scopeDepth {
 		emitByte(byte(OP_POP))
 		current.localCount--
@@ -243,14 +243,14 @@ func (p *Parser) defineVariable(global byte) {
 }
 
 func (p *Parser) parseVariable(errorMsg string) byte {
-	parser.consume(TOKEN_IDENTIFIER, errorMsg)
+	p.consume(TOKEN_IDENTIFIER, errorMsg)
 
 	p.declareVariable()
 	if current.scopeDepth > 0 {
 		return 0
 	}
 
-	return parser.previous.identifierConstant()
+	return p.previous.identifierConstant()
 }
 
 func (t *Token) identifierConstant() byte {
@@ -282,7 +282,8 @@ func (p *Parser) declareVariable() {
 	}
 	name := p.previous
 
-	for _, l := range current.locals {
+	for i := current.localCount - 1; i >= 0; i-- {
+		l := current.locals[i]
 		if l.depth != -1 && l.depth < current.scopeDepth {
 			break
 		}
@@ -316,8 +317,9 @@ func (t *Token) namedVariable(canAssign bool) {
 }
 
 func (name *Token) resolveLocal(compile *Compiler) (byte, bool) {
-	for i, local := range compile.locals {
-		if name.identifierEqual(&local.name) {
+	for i := current.localCount - 1; i >= 0; i-- {
+		l := current.locals[i]
+		if name.identifierEqual(&l.name) {
 			return byte(i), true
 		}
 	}
