@@ -128,6 +128,8 @@ func (p *Parser) block() {
 	for !p.check(TOKEN_RIGHT_BRACE) && !p.check(TOKEN_EOF) {
 		p.declaration()
 	}
+
+	p.consume(TOKEN_RIGHT_BRACE,"Expect '}' after block.")
 }
 
 func (p *Parser) beginScope() {
@@ -136,6 +138,7 @@ func (p *Parser) beginScope() {
 
 func (p *Parser) endScope() {
 	current.scopeDepth--
+	
 	for current.localCount > 0 && current.locals[current.localCount-1].depth > current.scopeDepth {
 		emitByte(byte(OP_POP))
 		current.localCount--
